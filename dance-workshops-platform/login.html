@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login | Rhythm</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="auth-page">
+
+<header class="topbar">
+    <div class="logo">RHYTHM</div>
+    <nav>
+        <a href="index.html">Workshops</a>
+        <a class="active" href="login.html">Login</a>
+    </nav>
+</header>
+
+<main class="auth-main">
+    <section class="auth-hero">
+        <div class="auth-left">
+            <p class="label">Dance Workshop Platform</p>
+            <h1>Step into<br>your rhythm.</h1>
+            <p class="hero-text">
+                Login or create an account to book workshops, manage classes and join the dance community.
+            </p>
+        </div>
+
+        <div class="auth-card">
+            <div class="tabs">
+                <button class="tab active" onclick="showForm('login')">Login</button>
+                <button class="tab" onclick="showForm('user')">User</button>
+                <button class="tab" onclick="showForm('teacher')">Teacher</button>
+            </div>
+
+            <form id="loginForm" class="auth-form active-form">
+                <h2>Welcome Back</h2>
+
+                <label>Email</label>
+                <input type="email" id="login_email" required>
+
+                <label>Password</label>
+                <input type="password" id="login_password" required>
+
+                <button type="submit">Login</button>
+            </form>
+
+            <form id="registerUserForm" class="auth-form">
+                <h2>Register User</h2>
+
+                <label>Name</label>
+                <input type="text" id="user_name" required>
+
+                <label>Email</label>
+                <input type="email" id="user_email" required>
+
+                <label>Password</label>
+                <input type="password" id="user_password" required>
+
+                <button type="submit">Create User Account</button>
+            </form>
+
+            <form id="registerTeacherForm" class="auth-form">
+                <h2>Register Teacher</h2>
+
+                <label>Name</label>
+                <input type="text" id="teacher_name" required>
+
+                <label>Email</label>
+                <input type="email" id="teacher_email" required>
+
+                <label>Password</label>
+                <input type="password" id="teacher_password" required>
+
+                <label>Style</label>
+                <input type="text" id="teacher_style" required>
+
+                <label>Experience</label>
+                <input type="text" id="teacher_experience" required>
+
+                <button type="submit">Create Teacher Account</button>
+            </form>
+        </div>
+    </section>
+</main>
+
+<script>
+function showForm(type) {
+    document.querySelectorAll('.auth-form').forEach(form => {
+        form.classList.remove('active-form');
+    });
+
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    if (type === 'login') {
+        document.getElementById('loginForm').classList.add('active-form');
+        document.querySelectorAll('.tab')[0].classList.add('active');
+    }
+
+    if (type === 'user') {
+        document.getElementById('registerUserForm').classList.add('active-form');
+        document.querySelectorAll('.tab')[1].classList.add('active');
+    }
+
+    if (type === 'teacher') {
+        document.getElementById('registerTeacherForm').classList.add('active-form');
+        document.querySelectorAll('.tab')[2].classList.add('active');
+    }
+}
+
+function saveAuth(data) {
+    localStorage.setItem("token", data.access_token);
+    localStorage.setItem("role", data.role);
+    localStorage.setItem("id", data.id);
+    localStorage.setItem("name", data.name);
+}
+
+function redirectByRole(role) {
+    if (role === "teacher") {
+        window.location.href = "teacher.html";
+    } else {
+        window.location.href = "orders.html";
+    }
+}
+
+document.getElementById('registerUserForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const name = document.getElementById('user_name').value;
+    const email = document.getElementById('user_email').value;
+    const password = document.getElementById('user_password').value;
+
+    const response = await fetch('https://rhythm-qp08.onrender.com/auth/register-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+        saveAuth(data);
+        redirectByRole(data.role);
+    } else {
+        alert(JSON.stringify(data));
+    }
+});
+
+document.getElementById('registerTeacherForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const name = document.getElementById('teacher_name').value;
+    const email = document.getElementById('teacher_email').value;
+    const password = document.getElementById('teacher_password').value;
+    const style = document.getElementById('teacher_style').value;
+    const experience = document.getElementById('teacher_experience').value;
+
+    const response = await fetch('http://127.0.0.1:8000/auth/register-teacher', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, style, experience })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+        saveAuth(data);
+        redirectByRole(data.role);
+    } else {
+        alert(JSON.stringify(data));
+    }
+});
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById('login_email').value;
+    const password = document.getElementById('login_password').value;
+
+    const response = await fetch('http://127.0.0.1:8000/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+        saveAuth(data);
+        redirectByRole(data.role);
+    } else {
+        alert(JSON.stringify(data));
+    }
+});
+</script>
+
+</body>
+</html>

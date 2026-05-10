@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rhythm | Workshops</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+    <div class="logo">RHYTHM</div>
+    <nav>
+        <a class="active" href="index.html">Workshops</a>
+        <a href="orders.html">My Bookings</a>
+        <a href="teacher.html" id="teacherPanelLink">Teacher Panel</a>
+        <a href="login.html" id="loginLink">Login</a>
+        <a href="login.html" id="logoutLink" onclick="logout()" style="display:none;">Logout</a>
+    </nav>
+</header>
+
+<aside class="sidebar">
+    <div class="profile">
+    <div class="icon-box">★</div>
+    <div>
+        <h4 id="profileName">Guest</h4>
+        <p id="profileRole">Not logged in</p>
+    </div>
+</div>
+
+    <a class="menu active" href="index.html">▦ Catalog</a>
+    <a class="menu" href="orders.html">▣ My Bookings</a>
+    <a class="menu" href="#">⚙ Settings</a>
+
+    <button class="side-btn">Book New Class</button>
+</aside>
+
+<main class="main">
+    <section class="dashboard-head">
+        <div>
+            <h1>Find your rhythm.</h1>
+            <p>Explore dance workshops, choose your style and book your next class.</p>
+        </div>
+        <div class="period-pill">
+            <span>Period:</span>
+            <strong>Today</strong>
+        </div>
+    </section>
+
+    <section class="bento">
+        <div class="kpi-card">
+            <div class="kpi-icon teal">🎟</div>
+            <span class="growth">+5.4%</span>
+            <p>ACTIVE WORKSHOPS</p>
+            <h2 id="workshopsCount">0</h2>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-content">
+                <span class="live-dot"></span>
+                <small>LIVE WORKSHOP SESSION</small>
+                <h3>Advanced Urban Flow</h3>
+                <p>Real-time dance platform for energetic workshop management.</p>
+            </div>
+        </div>
+    </section>
+
+    
+       
+    <section class="section-title">
+        <div>
+            <p class="label">Catalog</p>
+            <h2>Trending Workshops</h2>
+        </div>
+        <button onclick="loadWorkshops()">Refresh</button>
+    </section>
+
+<div class="filter-box">
+    <input type="text" id="styleSearch" placeholder="Search by style: Hip-Hop, K-pop, Break...">
+    <button onclick="searchWorkshops()">Search</button>
+    <button onclick="loadWorkshops()">Show All</button>
+</div>
+
+    <ul id="workshopList" class="cards-list"></ul>
+</main>
+
+<script>
+
+
+
+
+async function loadWorkshops() {
+    const response = await fetch('https://rhythm-qp08.onrender.com');
+    const data = await response.json();
+
+    document.getElementById('workshopsCount').innerText = data.length;
+
+    renderWorkshops(data);
+}
+
+function renderWorkshops(data) {
+    const list = document.getElementById('workshopList');
+    list.innerHTML = '';
+
+    data.forEach(workshop => {
+        const teacherName = workshop.teacher ? workshop.teacher.name : 'Unknown';
+
+        const li = document.createElement('li');
+
+       li.innerHTML = `
+    <div class="workshop-img">
+        <img src="${workshop.image_url}" alt="${workshop.title}">
+    </div>
+
+    <div class="workshop-content">
+        <span class="tag">${workshop.style}</span>
+        <h3>${workshop.title}</h3>
+        <p>Lead Instructor: ${teacherName}</p>
+        <strong>${workshop.price} ₸</strong>
+
+        <br><br>
+
+        <button onclick="openWorkshop(${workshop.id})">
+            View Details
+        </button>
+    </div>
+`;
+
+        list.appendChild(li);
+    });
+}
+function openWorkshop(workshopId) {
+    window.location.href = `workshop.html?id=${workshopId}`;
+}
+
+function setupNavbar() {
+    const role = localStorage.getItem("role");
+
+    const teacherPanelLink = document.getElementById("teacherPanelLink");
+    const loginLink = document.getElementById("loginLink");
+    const logoutLink = document.getElementById("logoutLink");
+
+    if (role) {
+        loginLink.style.display = "none";
+        logoutLink.style.display = "inline";
+    }
+
+    if (role !== "teacher") {
+        teacherPanelLink.style.display = "none";
+    }
+}
+
+function logout() {
+    localStorage.clear();
+}
+
+function setupProfile() {
+    const role = localStorage.getItem("role");
+    const name = localStorage.getItem("name");
+
+    const profileName = document.getElementById("profileName");
+    const profileRole = document.getElementById("profileRole");
+
+    if (role && name) {
+        profileName.innerText = name;
+        profileRole.innerText = role === "teacher" ? "Teacher Mode" : "User Mode";
+    } else {
+        profileName.innerText = "Guest";
+        profileRole.innerText = "Not logged in";
+    }
+}
+
+async function searchWorkshops() {
+    const style = document.getElementById('styleSearch').value.trim();
+
+    if (!style) {
+        loadWorkshops();
+        return;
+    }
+
+    const response = await fetch(`https://rhythm-qp08.onrender.com/workshops/style/${style}`);
+    const data = await response.json();
+
+    renderWorkshops(data);
+}
+setupProfile();
+setupNavbar();
+loadWorkshops();
+</script>
+
+</body>
+</html>

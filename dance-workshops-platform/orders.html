@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rhythm | Orders</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+    <div class="logo">RHYTHM</div>
+    <nav>
+        <a href="index.html">Workshops</a>
+        <a class="active" href="orders.html">My Bookings</a>
+        <a href="teacher.html" id="teacherPanelLink">Teacher Panel</a>
+        <a href="login.html" onclick="logout()">Logout</a>
+    </nav>
+</header>
+
+<aside class="sidebar">
+    <div class="profile">
+        <div class="icon-box">★</div>
+        <div>
+            <h4 id="profileName">Booking Center</h4>
+            <p id="profileRole">Member Mode</p>
+        </div>
+    </div>
+
+    <a class="menu" href="index.html">▦ Catalog</a>
+    <a class="menu active" href="orders.html">▣ My Bookings</a>
+    <a class="menu" href="login.html">◇ Switch Account</a>
+</aside>
+
+<main class="main">
+    <section class="dashboard-head">
+        <div>
+            <h1>Booking Hub</h1>
+            <p>Create and manage your dance workshop orders.</p>
+        </div>
+        <div class="period-pill">
+            <span>Status:</span>
+            <strong>Live</strong>
+        </div>
+    </section>
+
+    <section class="bento orders-bento">
+        <div class="kpi-card">
+            <div class="kpi-icon purple">🎟</div>
+            <span class="growth">Live</span>
+            <p>YOUR ORDERS</p>
+            <h2 id="ordersCount">0</h2>
+        </div>
+
+        <div class="feature-card orders-feature">
+            <div class="feature-content">
+                <span class="live-dot"></span>
+                <small>BOOKING MANAGEMENT</small>
+                <h3>Control every order</h3>
+                <p>Book workshops as a user or teacher automatically through your account.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="grid two">
+        <div class="card">
+            <h2>Create Order</h2>
+            <form id="orderForm">
+                <label>Choose Workshop</label>
+                <select id="workshop_id" required></select>
+
+                <button type="submit">Create Order</button>
+            </form>
+        </div>
+    </section>
+
+    <section class="section-title">
+        <div>
+            <p class="label">Bookings</p>
+            <h2>Active Orders</h2>
+        </div>
+        <button onclick="loadOrders()">Refresh</button>
+    </section>
+
+    <ul id="orderList" class="list"></ul>
+</main>
+<script>
+
+function checkAuth() {
+    const role = localStorage.getItem("role");
+    const id = localStorage.getItem("id");
+    const name = localStorage.getItem("name");
+
+    const teacherPanelLink = document.getElementById("teacherPanelLink");
+
+    if (role !== "teacher") {
+    teacherPanelLink.style.display = "none";
+    }
+
+    if (!role || !id) {
+        alert("Please login first");
+        window.location.href = "login.html";
+        return;
+    }
+
+    document.getElementById("profileName").innerText = name;
+    document.getElementById("profileRole").innerText = role === "teacher" ? "Teacher Mode" : "User Mode";
+}
+
+function logout() {
+    localStorage.clear();
+}
+
+document.getElementById('orderForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const role = localStorage.getItem("role");
+    const id = Number(localStorage.getItem("id"));
+    const workshop_id = Number(document.getElementById('workshop_id').value);
+
+    let orderData = {
+        workshop_id: workshop_id
+    };
+
+    if (role === "user") {
+        orderData.user_id = id;
+    } else if (role === "teacher") {
+        orderData.teacher_id = id;
+    }
+
+    const response = await fetch('https://rhythm-qp08.onrender.com/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData)
+    });
+
+    if (response.ok) {
+        alert('Order created successfully');
+        loadOrders();
+        document.getElementById('orderForm').reset();
+    } else {
+        const error = await response.json();
+        alert(JSON.stringify(error));
+    }
+});
+
+async function loadWorkshopOptions() {
+    const response = await fetch('https://rhythm-qp08.onrender.com/workshops');
+    const data = await response.json();
+
+    const select = document.getElementById('workshop_id');
+    select.innerHTML = '';
+
+    data.forEach(workshop => {
+        const option = document.createElement('option');
+        option.value = workshop.id;
+        option.textContent = `${workshop.title} — ${workshop.style} — ${workshop.price} ₸`;
+        select.appendChild(option);
+    });
+
+    const selectedWorkshopId = localStorage.getItem("selected_workshop_id");
+
+    if (selectedWorkshopId) {
+        select.value = selectedWorkshopId;
+        localStorage.removeItem("selected_workshop_id");
+    }
+}
+
+async function loadOrders() {
+    const role = localStorage.getItem("role");
+    const id = Number(localStorage.getItem("id"));
+
+    let url = 'https://rhythm-qp08.onrender.com/orders';
+
+    if (role === "user") {
+        url = `https://rhythm-qp08.onrender.com/users/${id}/orders`;
+    } else if (role === "teacher") {
+        url = `https://rhythm-qp08.onrender.com/teachers/${id}/orders`;
+    }
+
+    const response = await fetch(url);
+    const data = await response.json();
+
+    document.getElementById('ordersCount').innerText = data.length;
+
+    const list = document.getElementById('orderList');
+    list.innerHTML = '';
+
+    data.forEach(order => {
+        const owner = order.user_id ? `User: ${order.user_id}` : `Teacher: ${order.teacher_id}`;
+
+        const li = document.createElement('li');
+        li.innerHTML = `
+            <div>
+                <strong>Order #${order.id}</strong>
+                <span>${owner} | Workshop: ${order.workshop_id} | ${order.status}</span>
+            </div>
+            <button onclick="deleteOrder(${order.id})">Delete</button>
+        `;
+        list.appendChild(li);
+    });
+}
+
+async function deleteOrder(orderId) {
+    const response = await fetch(`https://rhythm-qp08.onrender.com/orders/${orderId}`, {
+        method: 'DELETE'
+    });
+
+    if (response.ok) {
+        loadOrders();
+    }
+}
+
+checkAuth();
+loadWorkshopOptions();
+loadOrders();
+</script>
+
+</body>
+</html>
