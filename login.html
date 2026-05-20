@@ -156,7 +156,7 @@ document.getElementById('registerTeacherForm').addEventListener('submit', async 
     const style = document.getElementById('teacher_style').value;
     const experience = document.getElementById('teacher_experience').value;
 
-    const response = await fetch('http://127.0.0.1:8000/auth/register-teacher', {
+    const response = await fetch('http://rhythm-qp08.onrender.com/auth/register-teacher', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password, style, experience })
@@ -178,7 +178,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     const email = document.getElementById('login_email').value;
     const password = document.getElementById('login_password').value;
 
-    const response = await fetch('http://127.0.0.1:8000/auth/login', {
+    const response = await fetch('http://rhythm-qp08.onrender.com/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
